@@ -23,7 +23,7 @@ func (index *Index) checkIfIndexIsReady() bool {
 	if index.IsReady() {
 		return true
 	}
-	timeout := time.After(indexWaitTimeout)
+	timeout := time.After(time.Second * 3)
 	ticker := time.NewTicker(time.Second * 1)
 
 	for {
