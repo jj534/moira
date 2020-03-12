@@ -15,8 +15,15 @@ import (
 
 // GetPatterns gets updated patterns array
 func (connector *DbConnector) GetPatterns() ([]string, error) {
-	c := connector.pool.Get()
+	var pool *redis.Pool
+	if connector.slavePool != nil {
+		pool = connector.slavePool
+	} else {
+		pool = connector.pool
+	}
+	c := pool.Get()
 	defer c.Close()
+
 	patterns, err := redis.Strings(c.Do("SMEMBERS", patternsListKey))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get moira patterns, error: %v", err)

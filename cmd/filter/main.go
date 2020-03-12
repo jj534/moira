@@ -78,7 +78,9 @@ func main() {
 	}
 
 	filterMetrics := metrics.ConfigureFilterMetrics(telemetry.Metrics)
-	database := redis.NewDatabase(logger, config.Redis.GetSettings(), redis.Filter)
+	redisConfig := config.Redis.GetSettings()
+	redisConfig.AllowSlaveReads = true
+	database := redis.NewDatabase(logger, redisConfig, redis.Filter)
 
 	retentionConfigFile, err := os.Open(config.Filter.RetentionConfig)
 	if err != nil {

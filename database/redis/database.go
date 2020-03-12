@@ -71,9 +71,14 @@ func NewDatabase(logger moira.Logger, config Config, source DBSource) *DbConnect
 	}
 	var slavePool *redis.Pool
 	if slaveDialer != nil {
-		slavePool = &*pool
-		slavePool.Dial = slaveDialer.Dial
-		slavePool.TestOnBorrow = slaveDialer.Test
+		slavePool = &redis.Pool{
+			MaxIdle:      config.ConnectionLimit,
+			MaxActive:    config.ConnectionLimit,
+			Wait:         true,
+			IdleTimeout:  240 * time.Second,
+			Dial:         slaveDialer.Dial,
+			TestOnBorrow: slaveDialer.Test,
+		}
 	}
 
 	return &DbConnector{
