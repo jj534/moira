@@ -19,7 +19,7 @@ var sentinelConfig = SentinelPoolDialerConfig{
 	},
 }
 
-func TestDirectDialer(t *testing.T) {	
+func TestDirectDialer(t *testing.T) {
 	Convey("Direct dialer", t, func() {
 		Convey("Tries dial and fails", func() {
 			dialer := DirectPoolDialer {
@@ -48,7 +48,6 @@ func TestDirectDialer(t *testing.T) {
 			So(err, ShouldBeNil)
 		})
 	})
-
 }
 
 func TestSentinelDialer(t *testing.T) {
