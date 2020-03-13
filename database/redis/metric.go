@@ -15,13 +15,7 @@ import (
 
 // GetPatterns gets updated patterns array
 func (connector *DbConnector) GetPatterns() ([]string, error) {
-	var pool *redis.Pool
-	if connector.slavePool != nil {
-		pool = connector.slavePool
-	} else {
-		pool = connector.pool
-	}
-	c := pool.Get()
+	c := connector.pool.Get()
 	defer c.Close()
 
 	patterns, err := redis.Strings(c.Do("SMEMBERS", patternsListKey))

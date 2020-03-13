@@ -40,13 +40,14 @@ const (
 // DbConnector contains redis pool
 type DbConnector struct {
 	pool                 *redis.Pool
-	slavePool            *redis.Pool
 	logger               moira.Logger
 	retentionCache       *cache.Cache
 	retentionSavingCache *cache.Cache
 	metricsCache         *cache.Cache
 	sync                 *redsync.Redsync
 	source               DBSource
+
+	slaveConnector *DbConnector
 }
 
 // NewDatabase creates Redis pool based on config
@@ -81,9 +82,8 @@ func NewDatabase(logger moira.Logger, config Config, source DBSource) *DbConnect
 		}
 	}
 
-	return &DbConnector{
+	connector := &DbConnector{
 		pool:                 pool,
-		slavePool:            slavePool,
 		logger:               logger,
 		retentionCache:       cache.New(cacheValueExpirationDuration, cacheCleanupInterval),
 		retentionSavingCache: cache.New(cache.NoExpiration, cache.DefaultExpiration),
@@ -91,6 +91,29 @@ func NewDatabase(logger moira.Logger, config Config, source DBSource) *DbConnect
 		sync:                 redsync.New([]redsync.Pool{syncPool}),
 		source:               source,
 	}
+
+	if slavePool != nil {
+		slaveConnector := &DbConnector{
+			pool:                 slavePool,
+			retentionCache:       connector.retentionCache,
+			retentionSavingCache: connector.retentionSavingCache,
+			metricsCache:         connector.metricsCache,
+			sync:                 connector.sync,
+			source:               connector.source,
+		}
+		connector.slaveConnector = slaveConnector
+	}
+
+	return connector
+}
+
+// AllowStale returns a database instance, that prioritizes connections to slave nodes
+// Should only be used for read accesses when data actuality is not needed
+func (connector *DbConnector) AllowStale() moira.Database {
+	if connector.slaveConnector == nil {
+		return connector
+	}
+	return connector.slaveConnector
 }
 
 func createPoolDialers(logger moira.Logger, config Config) (mainDialer, slaveDialer PoolDialer) {
